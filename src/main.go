@@ -37,17 +37,17 @@ type Reality struct {
 	lyr1, lyr2, lyr3 string;
 }
 
-func read_map_data(file string) (string, bool) {
+func read_map_data(file string) (string, error) {
 	f_contents, err_v := ioutil.ReadFile(file);
 	if (err_v != nil) {
-		fmt.Println("ERROR READING FILE: ", err_v);
-		return "", false;
+		fmt.Println("ERROR: %s", err_v);
+		return "", err_v;
 	}
-	return string(f_contents), true;
+	return string(f_contents), err_v;
 }
 
 func load_entity(texture, title string) Entity {
-	var new_entity Entity;
+	var new_entity	Entity;
 
 	new_entity.Name = title;
 	new_entity.Sprite = rl.LoadTexture(texture);
@@ -55,12 +55,19 @@ func load_entity(texture, title string) Entity {
 }
 
 func main() {
-	var game Reality;
+	var game	Reality;
+	var ret		error;
 
 	rl.InitWindow(WIDTH, HEIGHT, "Larproom simulator");
 	game.Gans = load_entity(GAN_TEXTURE, "Gansmeneer");
 	game.Will = load_entity(WIL_TEXTURE, "Willem");
 	game.Fmax = load_entity(MAX_TEXTURE, "Max")
+	game.lyr1, ret = read_map_data(LYR1);
+	if (ret != nil) { return };
+	game.lyr2, ret = read_map_data(LYR2);
+	if (ret != nil) { return };
+	game.lyr3, ret = read_map_data(LYR3);
+	if (ret != nil) { return };
 	for (!rl.WindowShouldClose()) {
 		rl.BeginDrawing()
 			rl.ClearBackground(rl.White)
