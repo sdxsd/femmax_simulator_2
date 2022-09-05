@@ -28,7 +28,7 @@ const LYR3			string = "../maps/lyr3.txt"
 type Entity struct {
 	Dialogue, Name	string;
 	Sprite			rl.Texture2D;
-	x_pos, y_pos	int8
+	x_pos, y_pos	int32
 }
 
 // Game state struct.
@@ -55,28 +55,26 @@ func load_entity(texture, title string) Entity {
 	return (new_entity);
 }
 
-func floor_tex(lyr1 string) rl.Texture2D {
-	var curr_x	float32 = 0.0;
-	var curr_y	float32 = 0.0;
-	var Width	= int(WIDTH)
-	var Height	= int(HEIGHT)
+func parse_lyr1(lyr1 string) rl.Texture2D {
+	var Width = int(WIDTH)
+	var Height = int(HEIGHT)
 	floor := rl.GenImageColor(Width, Height, rl.White);
 	f_tile := rl.LoadImage(FLR_TEXTURE);
 	v_tile := rl.LoadImage(VNT_TEXTURE);
-	tile_rec := rl.Rectangle { curr_x, curr_y, float32(f_tile.Width), float32(f_tile.Height) };
-	floor_rec := rl.Rectangle {0, 0, float32(floor.Width), float32(floor.Height) };
+	tile_rec := rl.Rectangle { 0, 0, float32(f_tile.Width), float32(f_tile.Height) };
+	floor_rec := rl.Rectangle { 0, 0, float32(floor.Width), float32(floor.Height) };
 	chars := []rune(lyr1);
-
 	for i := 0; i < len(chars); i++ {
-		if (chars[i] == '\n') {
+		if (chars[i] == 10) {
 			tile_rec.Y += 64;
+			tile_rec.X = 0;
 		}
 		if (chars[i] == '#') {
-			rl.ImageDraw(floor, f_tile, tile_rec, floor_rec, rl.White);
+			rl.ImageDraw(floor, f_tile, floor_rec, tile_rec, rl.White);
 			tile_rec.X += 64;
 		}
 		if (chars[i] == 'V') {
-			rl.ImageDraw(floor, v_tile, tile_rec, floor_rec, rl.White);
+			rl.ImageDraw(floor, v_tile, floor_rec, tile_rec, rl.White);
 			tile_rec.X += 64;
 		}
 	}
@@ -87,11 +85,44 @@ func floor_tex(lyr1 string) rl.Texture2D {
 	return (floor_tex);
 }
 
+func parse_lyr3(gans, will, femmax *Entity, lyr3 string) {
+	chars := []rune(lyr3);
+	var x, y int32;
+
+	for i := 0; i < len(chars); i++ {
+		if (chars[i] == '\n') {
+			y++;
+			x = 0;
+		}
+		if (chars[i] == 'M') {
+			femmax.x_pos = 64 * x;
+			femmax.y_pos = 64 * y;
+		}
+		if (chars[i] == 'G') {
+			gans.x_pos = 64 * x;
+			gans.y_pos = 64 * y;
+		}
+		if (chars[i] == 'W') {
+			will.x_pos = 64 * x;
+			will.y_pos = 64 * y;
+		}
+		x++;
+	}
+}
+
+func cntr_pos(pos int32, character Entity, h_w bool) int32 {
+	if (h_w == true) {
+		return (pos - character.Sprite.Height / 2)
+	}
+	return (pos - character.Sprite.Width)
+}
+
 func main() {
 	var game	Reality;
 	var ret		error;
 
 	rl.InitWindow(WIDTH, HEIGHT, "Larproom simulator");
+	rl.SetTargetFPS(60);
 	game.Gans = load_entity(GAN_TEXTURE, "Gansmeneer");
 	game.Will = load_entity(WIL_TEXTURE, "Willem");
 	game.Fmax = load_entity(MAX_TEXTURE, "Max")
@@ -101,9 +132,15 @@ func main() {
 	if (ret != nil) { return };
 	game.lyr3, ret = read_map_data(LYR3);
 	if (ret != nil) { return };
+	game.floor = parse_lyr1(game.lyr1);
+	parse_lyr3(&game.Gans, &game.Will, &game.Fmax, game.lyr3)
 	for (!rl.WindowShouldClose()) {
 		rl.BeginDrawing()
 			rl.ClearBackground(rl.White)
+			rl.DrawTexture(game.floor, 0, 0, rl.White);
+			rl.DrawTexture(game.Gans.Sprite, cntr_pos(game.Gans.x_pos, game.Gans, false), cntr_pos(game.Gans.y_pos, game.Gans, true), rl.White);
+			rl.DrawTexture(game.Fmax.Sprite, cntr_pos(game.Fmax.x_pos, game.Fmax, false), cntr_pos(game.Fmax.y_pos, game.Fmax, true), rl.White);
+			rl.DrawTexture(game.Will.Sprite, cntr_pos(game.Will.x_pos, game.Will, false), cntr_pos(game.Will.y_pos, game.Will, true), rl.White);
 		rl.EndDrawing()
 	}
 }
