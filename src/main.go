@@ -62,10 +62,29 @@ func floor_tex(lyr1 string) rl.Texture2D {
 	var Height	= int(HEIGHT)
 	floor := rl.GenImageColor(Width, Height, rl.White);
 	f_tile := rl.LoadImage(FLR_TEXTURE);
-	f_tile_rec := rl.Rectangle { curr_x, curr_y, float32(f_tile.Width), float32(f_tile.Height) };
+	v_tile := rl.LoadImage(VNT_TEXTURE);
+	tile_rec := rl.Rectangle { curr_x, curr_y, float32(f_tile.Width), float32(f_tile.Height) };
 	floor_rec := rl.Rectangle {0, 0, float32(floor.Width), float32(floor.Height) };
+	chars := []rune(lyr1);
 
-	for ()
+	for i := 0; i < len(chars); i++ {
+		if (chars[i] == '\n') {
+			tile_rec.Y += 64;
+		}
+		if (chars[i] == '#') {
+			rl.ImageDraw(floor, f_tile, tile_rec, floor_rec, rl.White);
+			tile_rec.X += 64;
+		}
+		if (chars[i] == 'V') {
+			rl.ImageDraw(floor, v_tile, tile_rec, floor_rec, rl.White);
+			tile_rec.X += 64;
+		}
+	}
+	rl.UnloadImage(f_tile);
+	rl.UnloadImage(v_tile);
+	floor_tex := rl.LoadTextureFromImage(floor);
+	rl.UnloadImage(floor);
+	return (floor_tex);
 }
 
 func main() {
