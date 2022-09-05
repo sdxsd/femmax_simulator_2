@@ -1,4 +1,4 @@
-module femmax_simulator_2
+module github.com/sdxsd/femmax_simulator_2
 
 go 1.19
 

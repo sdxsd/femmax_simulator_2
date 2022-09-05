@@ -10,32 +10,38 @@ import (
 const WIDTH			int32 = 448
 const HEIGHT		int32 = 448
 // Character textures
-const MAX_TEXTURE	string = "../assets/max.png"
-const GAN_TEXTURE	string = "../assets/gans.png"
-const WIL_TEXTURE	string = "../assets/will.png"
+const MAX_TEXTURE	string = "assets/max.png"
+const GAN_TEXTURE	string = "assets/gans.png"
+const WIL_TEXTURE	string = "assets/will.png"
 // Environment textures
-const FLR_TEXTURE	string = "../assets/env/floor.png"
-const TBL_TEXTURE	string = "../assets/env/table.png"
-const VNT_TEXTURE	string = "../assets/env/fvent.png"
-const TCH_TEXTURE	string = "../assets/env/t_chr.png"
-const MCH_TEXTURE	string = "../assets/env/m_chr.png"
+const FLR_TEXTURE	string = "assets/env/floor.png"
+const TBL_TEXTURE	string = "assets/env/table.png"
+const VNT_TEXTURE	string = "assets/env/fvent.png"
+const TCH_TEXTURE	string = "assets/env/t_chr.png"
+const MCH_TEXTURE	string = "assets/env/m_chr.png"
 // Map files
-const LYR1			string = "../maps/lyr1.txt"
-const LYR2			string = "../maps/lyr2.txt"
-const LYR3			string = "../maps/lyr3.txt"
+const LYR1			string = "maps/lyr1.txt"
+const LYR2			string = "maps/lyr2.txt"
+const LYR3			string = "maps/lyr3.txt"
 
 // Generic NPC/Player entity.
 type Entity struct {
 	Dialogue, Name	string;
 	Sprite			rl.Texture2D;
-	x_pos, y_pos	int32
+	x_pos, y_pos	int32;
+}
+
+type Prop struct {
+	Sprite rl.Texture2D;
+	x_pos, y_pos int32;
 }
 
 // Game state struct.
 type Reality struct {
 	Will, Fmax, Gans	Entity;
 	lyr1, lyr2, lyr3	string;
-	floor				rl.Texture2D
+	floor				rl.Texture2D;
+	table, chair		Prop;
 }
 
 func read_map_data(file string) (string, error) {
@@ -85,6 +91,27 @@ func parse_lyr1(lyr1 string) rl.Texture2D {
 	return (floor_tex);
 }
 
+func parse_lyr2(table, chair *Prop, lyr2 string) {
+	chars := []rune(lyr2);
+	var x, y int32;
+
+	for i := 0; i < len(chars); i++ {
+		if (chars[i] == '\n') {
+			y++;
+			x = 0;
+		}
+		if (chars[i] == 'T') {
+			table.x_pos = 64 * x;
+			table.y_pos = 64 * y;
+		}
+		if (chars[i] == 'M') {
+			chair.x_pos = 64 * x;
+			chair.y_pos = 64 * y;
+		}
+		x++;
+	}
+}
+
 func parse_lyr3(gans, will, femmax *Entity, lyr3 string) {
 	chars := []rune(lyr3);
 	var x, y int32;
@@ -112,7 +139,7 @@ func parse_lyr3(gans, will, femmax *Entity, lyr3 string) {
 
 func cntr_pos(pos int32, character Entity, h_w bool) int32 {
 	if (h_w == true) {
-		return (pos - character.Sprite.Height / 2)
+		return (pos - character.Sprite.Height / 3)
 	}
 	return (pos - character.Sprite.Width)
 }
@@ -133,11 +160,17 @@ func main() {
 	game.lyr3, ret = read_map_data(LYR3);
 	if (ret != nil) { return };
 	game.floor = parse_lyr1(game.lyr1);
+	parse_lyr2(&game.table, &game.chair, game.lyr2);
+	fmt.Println(game.table.x_pos, game.table.y_pos);
+	game.table.Sprite = rl.LoadTexture(TBL_TEXTURE);
+	game.chair.Sprite = rl.LoadTexture(MCH_TEXTURE);
 	parse_lyr3(&game.Gans, &game.Will, &game.Fmax, game.lyr3)
 	for (!rl.WindowShouldClose()) {
 		rl.BeginDrawing()
 			rl.ClearBackground(rl.White)
 			rl.DrawTexture(game.floor, 0, 0, rl.White);
+			rl.DrawTexture(game.table.Sprite, game.table.x_pos - game.table.Sprite.Width, game.table.y_pos - game.table.Sprite.Height / 2, rl.White);
+			rl.DrawTexture(game.chair.Sprite, game.chair.x_pos, game.chair.y_pos, rl.White);
 			rl.DrawTexture(game.Gans.Sprite, cntr_pos(game.Gans.x_pos, game.Gans, false), cntr_pos(game.Gans.y_pos, game.Gans, true), rl.White);
 			rl.DrawTexture(game.Fmax.Sprite, cntr_pos(game.Fmax.x_pos, game.Fmax, false), cntr_pos(game.Fmax.y_pos, game.Fmax, true), rl.White);
 			rl.DrawTexture(game.Will.Sprite, cntr_pos(game.Will.x_pos, game.Will, false), cntr_pos(game.Will.y_pos, game.Will, true), rl.White);
